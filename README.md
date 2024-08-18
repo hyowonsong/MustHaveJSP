@@ -76,109 +76,154 @@ CREATE SEQUENCE seq_board_num
 ```
 
 ---
+## 기획단계
+
+![image.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/36358b89-fde5-4b16-95d9-7decef74047e/60982bc7-d02f-480d-8d24-0accf47514d6/image.png)
+
+---
 
 ## 🛠️ 개발 과정 및 문제 해결
 
-### 문제 1: 데이터베이스 동시 접근으로 인한 무결성 문제
+### 문제 1: 데이터베이스 커넥션 풀 구현
 
 문제 상황:
 
-- 게시물 조회수 증가 기능에서 동시 접근 시 `visitcount` 필드 업데이트 오류 발생
-- 조회수 중복 또는 부정확한 결과 초래
+- 데이터베이스 연결의 비효율적인 생성과 해제로 인한 성능 저하
 
-해결 방식:
+해결 방법:
 
-- 데이터베이스 트랜잭션과 `synchronized` 블록 활용
-- 원자성 보장 및 동시 요청 시 정확한 데이터 처리 구현
+- JNDI를 이용한 DataSource 획득 및 커넥션 풀 구현
+- 자원의 효율적인 관리를 위한 close() 메서드 구현
 
-코드 :
+핵심 코드:
 
 ```java
-public synchronized void updateVisitCount(String num) {
-    try {
-        String sql = "UPDATE board SET visitcount = visitcount + 1 WHERE num = ?";
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setString(1, num);
-        pstmt.executeUpdate();
-    } catch (SQLException e) {
-        e.printStackTrace();
+public class DBConnPool {
+    public Connection con;
+    public Statement stmt;
+    public PreparedStatement psmt;
+    public ResultSet rs;
+
+    public DBConnPool() {
+        try {
+            Context initCtx = new InitialContext();
+            Context ctx = (Context)initCtx.lookup("java:comp/env");
+            DataSource source = (DataSource)ctx.lookup("dbcp_myoracle");
+            con = source.getConnection();
+            System.out.println("DB 커넥션 풀 연결 성공");
+        }
+        catch (Exception e) {
+            System.out.println("DB 커넥션 풀 연결 실패");
+            e.printStackTrace();
+        }
+    }
+
+    public void close() {
+        try {
+            if (rs != null) rs.close();
+            if (stmt != null) stmt.close();
+            if (psmt != null) psmt.close();
+            if (con != null) con.close();
+            System.out.println("DB 커넥션 풀 자원 반납");
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
+
 ```
 
-### 문제 2: 페이지 처리 로직의 성능 저하
+### 문제 2: 페이징 처리를 통한 대량 데이터 효율적 관리
 
 문제 상황:
 
-- 전체 게시물 수 계산 기반 페이지 나누기로 인한 성능 저하
-- 게시물 증가에 따른 페이지 계산 속도 감소
+- 대량의 게시물 데이터를 한 번에 로드할 때 발생하는 성능 이슈
+- 사용자 경험 저하 및 서버 부하 증가
 
-해결 방식:
+해결 방법:
 
-- 게시물 수 사전 계산 및 캐싱 전략 도입
-- `LIMIT` 및 `OFFSET` 쿼리 사용으로 데이터베이스 부하 감소
-- 페이지 계산 로직 개선으로 페이지네이션 성능 향상
+- SQL 쿼리에 ROWNUM을 활용한 페이징 처리 구현
+- 페이지 번호에 따른 동적 쿼리 생성
 
-코드 :
+핵심 코드:
 
 ```java
-public List<BoardDTO> selectListPage(Map<String, Object> param) {
-    List<BoardDTO> boardLists = new ArrayList<>();
+public List<BoardDTO> selectListPage(Map<String, Object> map) {
+    List<BoardDTO> bbs = new Vector<BoardDTO>();
+
+    String query = " SELECT * FROM ( "
+                 + "    SELECT Tb.*, ROWNUM rNum FROM ( "
+                 + "        SELECT * FROM board ";
+
+    if (map.get("searchWord") != null) {
+        query += " WHERE " + map.get("searchField")
+               + " LIKE '%" + map.get("searchWord") + "%' ";
+    }
+
+    query += "      ORDER BY num DESC "
+           + "     ) Tb "
+           + " ) "
+           + " WHERE rNum BETWEEN ? AND ?";
+
     try {
-        String sql = "SELECT * FROM board WHERE title LIKE ? ORDER BY num DESC LIMIT ?, ?";
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setString(1, "%" + param.get("searchWord") + "%");
-        pstmt.setInt(2, (Integer) param.get("start") - 1);
-        pstmt.setInt(3, (Integer) param.get("end") - (Integer) param.get("start") + 1);
-        ResultSet rs = pstmt.executeQuery();
+        psmt = con.prepareStatement(query);
+        psmt.setString(1, map.get("start").toString());
+        psmt.setString(2, map.get("end").toString());
+        rs = psmt.executeQuery();
+
         while (rs.next()) {
             BoardDTO dto = new BoardDTO();
-            dto.setNum(rs.getString("num"));
-            dto.setTitle(rs.getString("title"));
-            // 기타 필드 설정
-            boardLists.add(dto);
+            // dto 객체에 데이터 설정
+            bbs.add(dto);
         }
-    } catch (SQLException e) {
+    }
+    catch (Exception e) {
+        System.out.println("게시물 조회 중 예외 발생");
         e.printStackTrace();
     }
-    return boardLists;
+
+    return bbs;
 }
 ```
 
-### 문제 3: 보안 취약점 - SQL 인젝션
+### 문제 3: 보안을 고려한 사용자 인증 및 세션 관리
 
 문제 상황:
 
-- 사용자 입력의 직접 SQL 쿼리 삽입으로 인한 SQL 인젝션 취약점 발생
-- 데이터베이스 보안 위협
+- 안전하지 않은 사용자 인증 방식
+- XSS 공격 위험
 
-해결 방식:
+해결 방법:
 
-- PreparedStatement 사용으로 사용자 입력 안전 처리
-- 쿼리 파라미터를 통한 입력값 바인딩
-- SQL 인젝션 공격 방지
+- 비밀번호 해싱 적용
+- 세션 기반의 로그인 상태 관리 및 보안 강화
 
-코드 :
+핵심 코드:
 
 ```java
-public BoardDTO selectView(String num) {
-    BoardDTO dto = new BoardDTO();
-    try {
-        String sql = "SELECT * FROM board WHERE num = ?";
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setString(1, num);
-        ResultSet rs = pstmt.executeQuery();
-        if (rs.next()) {
-            dto.setNum(rs.getString("num"));
-            dto.setTitle(rs.getString("title"));
-            // 기타 필드 설정
-        }
-    } catch (SQLException e) {
-        e.printStackTrace();
-    }
-    return dto;
+// LoginProcess.jsp
+if (memberDTO.getId() != null) {
+    // 로그인 성공
+    session.setAttribute("UserId", memberDTO.getId());
+    session.setAttribute("UserName", memberDTO.getName());
+    response.sendRedirect("LoginForm.jsp");
+} else {
+    // 로그인 실패
+    request.setAttribute("LoginErrMsg", "로그인 오류입니다.");
+    request.getRequestDispatcher("LoginForm.jsp").forward(request, response);
 }
+
+// Logout.jsp
+session.invalidate();
+response.sendRedirect("LoginForm.jsp");
+
+// 입력 데이터 검증 (XSS 방지)
+String safeInput = StringEscapeUtils.escapeHtml4(userInput);
+
 ```
+
+---
 
 ---
 
