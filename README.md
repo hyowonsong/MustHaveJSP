@@ -91,7 +91,7 @@ CREATE SEQUENCE seq_board_num
 - 데이터베이스 트랜잭션과 `synchronized` 블록 활용
 - 원자성 보장 및 동시 요청 시 정확한 데이터 처리 구현
 
-코드 예시:
+코드 :
 
 ```java
 public synchronized void updateVisitCount(String num) {
@@ -119,7 +119,7 @@ public synchronized void updateVisitCount(String num) {
 - `LIMIT` 및 `OFFSET` 쿼리 사용으로 데이터베이스 부하 감소
 - 페이지 계산 로직 개선으로 페이지네이션 성능 향상
 
-코드 예시:
+코드 :
 
 ```java
 public List<BoardDTO> selectListPage(Map<String, Object> param) {
@@ -158,7 +158,7 @@ public List<BoardDTO> selectListPage(Map<String, Object> param) {
 - 쿼리 파라미터를 통한 입력값 바인딩
 - SQL 인젝션 공격 방지
 
-코드 예시:
+코드 :
 
 ```java
 public BoardDTO selectView(String num) {
