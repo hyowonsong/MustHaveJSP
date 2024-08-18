@@ -1,0 +1,155 @@
+:root {
+  --primary-color: #3498db; /* 로그인 버튼 색상 */
+  --secondary-color: #2c3e50;
+  --background-color: #ecf0f1;
+  --text-color: #34495e;
+  --accent-color: #e74c3c;
+  --success-color: #2ecc71;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  line-height: 1.6;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  width: 80%;
+  margin: auto;
+  overflow: hidden;
+  padding: 20px;
+}
+
+h1, h2, h3 {
+  color: var(--secondary-color);
+}
+
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Navigation */
+nav {
+  background-color: var(--secondary-color);
+  color: #fff;
+  padding: 10px 0;
+}
+
+nav a {
+  color: #fff;
+  padding: 10px;
+}
+
+/* Forms */
+form {
+  background: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+input[type="text"],
+input[type="password"],
+textarea {
+  width: calc(100% - 22px); /* width 계산 시 padding과 border를 고려 */
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box; /* padding과 border를 포함한 전체 너비 조정 */
+}
+
+.btn {
+  display: inline-block;
+  background: var(--primary-color); /* 로그인 버튼 색상 적용 */
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  font-size: 1em; /* 버튼 텍스트 크기 조정 */
+  margin: 5px 0; /* 버튼 사이의 여백 */
+}
+
+.btn:hover {
+  background: #2980b9; /* 버튼 hover 색상 */
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+}
+
+table, th, td {
+  border: 1px solid #ddd;
+}
+
+th, td {
+  padding: 12px;
+}
+
+th {
+  background-color: var(--secondary-color);
+  color: #fff;
+}
+
+tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+/* Messages */
+.error-message {
+  display: none; /* 기본적으로 숨김 */
+  color: var(--accent-color);
+  background-color: #f8d7da; 
+  border: 1px solid var(--accent-color); 
+  padding: 10px; 
+  margin: 10px 0;
+  border-radius: 4px; 
+  font-weight: bold; /* 텍스트를 굵게 */
+  box-sizing: border-box; /* 패딩과 테두리를 포함한 전체 너비 조정 */
+}
+
+.error-message.show {
+  display: block; /* 오류 메시지 보이게 */
+}
+
+.success-message {
+  color: var(--success-color);
+  background-color: #d4efdf;
+  border: 1px solid var(--success-color);
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 5px;
+  box-sizing: border-box; /* 패딩과 테두리를 포함한 전체 너비 조정 */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    width: 95%;
+  }
+  
+  table {
+    font-size: 14px;
+  }
+
+  /* 버튼 사이즈 조정 (반응형 디자인) */
+  .btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 1.1em;
+  }
+}
