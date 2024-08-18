@@ -12,9 +12,6 @@
     - 데이터베이스: `Oracle`
     - 서버: `Apache Tomcat`
     - 개발 도구: `Eclipse IDE`
-- **주요 링크**:
-    - Github: https://github.com/hyowonsong/MustHaveJSP
-    - Notion: [**노션 링크(Link)**](https://www.notion.so/be01b21883814be4a366be9c324aa38b?pvs=21)
 
 ---
 
@@ -59,7 +56,7 @@ CREATE TABLE board (
 );
 ```
 
-## 7. 외래 키 설정
+## 외래 키 설정
 `board` 테이블에 외래 키 제약 조건을 추가합니다.
 
 ```sql
@@ -68,7 +65,7 @@ ALTER TABLE board
     REFERENCES member (id);
 ```
 
-## 8. 시퀀스 생성
+## 시퀀스 생성
 `board` 테이블의 `num` 필드를 자동 증가시키기 위한 시퀀스를 생성합니다.
 
 ```sql
