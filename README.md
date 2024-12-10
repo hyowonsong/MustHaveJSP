@@ -76,11 +76,6 @@ CREATE SEQUENCE seq_board_num
 ```
 
 ---
-## 기획단계
-
-![image.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/36358b89-fde5-4b16-95d9-7decef74047e/60982bc7-d02f-480d-8d24-0accf47514d6/image.png)
-
----
 
 ## 🛠️ 개발 과정 및 문제 해결
 
